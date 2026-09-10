@@ -588,6 +588,9 @@
     </div>
 
     <script>
+        // ==================== البيانات في الذاكرة فقط (بدون localStorage) ====================
+        let allRequests = [];
+
         // ==================== التبويبات ====================
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -603,45 +606,6 @@
                 document.getElementById(tabName).classList.add('active');
             });
         });
-
-        // ==================== تخزين البيانات ====================
-        let memoryRequests = [];
-        let storageAvailable = true;
-
-        function testStorage() {
-            try {
-                const testKey = '__storage_test__';
-                localStorage.setItem(testKey, '1');
-                localStorage.removeItem(testKey);
-                return true;
-            } catch (err) {
-                return false;
-            }
-        }
-        storageAvailable = testStorage();
-
-        function getRequests() {
-            if (storageAvailable) {
-                try {
-                    return JSON.parse(localStorage.getItem('programmingRequests')) || [];
-                } catch (err) {
-                    return memoryRequests;
-                }
-            }
-            return memoryRequests;
-        }
-
-        function saveRequests(requests) {
-            if (storageAvailable) {
-                try {
-                    localStorage.setItem('programmingRequests', JSON.stringify(requests));
-                    return;
-                } catch (err) {
-                    storageAvailable = false;
-                }
-            }
-            memoryRequests = requests;
-        }
 
         // ==================== نموذج الطلب ====================
         const requestForm = document.getElementById('requestForm');
@@ -663,10 +627,8 @@
                 timestamp: new Date().toLocaleString('ar-SA')
             };
 
-            // حفظ الطلب
-            const requests = getRequests();
-            requests.push(formData);
-            saveRequests(requests);
+            // حفظ الطلب في الذاكرة
+            allRequests.push(formData);
 
             // إظهار رسالة نجاح
             successMessage.innerHTML = `
@@ -736,10 +698,9 @@
 
         // عرض الطلبيات
         function displayRequests() {
-            const requests = getRequests();
-            requestsCount.textContent = requests.length;
+            requestsCount.textContent = allRequests.length;
 
-            if (requests.length === 0) {
+            if (allRequests.length === 0) {
                 requestsList.innerHTML = `
                     <div class="no-requests">
                         <div class="no-requests-icon">📭</div>
@@ -750,7 +711,7 @@
                 return;
             }
 
-            requestsList.innerHTML = requests.map(request => `
+            requestsList.innerHTML = allRequests.map(request => `
                 <div class="request-card">
                     <div class="request-card-header">
                         <div class="request-card-title">🎯 ${request.appName}</div>
@@ -793,9 +754,7 @@
         // حذف طلب
         function deleteRequest(id) {
             if (confirm('هل تريد حذف هذا الطلب؟')) {
-                let requests = getRequests();
-                requests = requests.filter(req => req.id !== id);
-                saveRequests(requests);
+                allRequests = allRequests.filter(req => req.id !== id);
                 displayRequests();
                 alert('✅ تم حذف الطلب بنجاح');
             }
